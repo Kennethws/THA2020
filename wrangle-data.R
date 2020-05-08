@@ -26,6 +26,18 @@ total <- papers %>%
 total$incitation[is.na(total$incitation)] <- 0
 total$outcitation[is.na(total$outcitation)] <- 0
 
+# add a year column for Q2
+total <- total %>% 
+  mutate(tmp = date) %>% 
+  separate(col = tmp, into = c('year', 'no1', 'no2'), sep = '-') %>% 
+  select(PaperID, date, year, incitation, outcitation)
+
+# add a month column for Q3
+total <- total %>% 
+  mutate(tmp = date) %>% 
+  separate(col = tmp, into = c('no1', 'month', 'no2'), '-') %>% 
+  select(PaperID, date, year, month, incitation, outcitation)
+
 #--------------------------------------------------------------------
 # save as rda
 save(papers, file = 'rda/papers.rda')

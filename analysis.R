@@ -1,11 +1,14 @@
 library(tidyverse)
 library(gridExtra)
+library(ggrepel)
+library(stargazer)
 
 # load data
 load('rda/papers.rda')
 load('rda/citations.rda')
 load('rda/total.rda')
 
+### Q1
 ## univariate analysis
 # summary statistics
 summary(total$incitation)
@@ -43,4 +46,64 @@ total %>%
   ggtitle('Scatterplot of in vs. out') +
   xlab('in-citation number') +
   ylab('out-citation number')
+ggsave('figs/in vs out.png')
 
+# in vs. out against year
+total %>% 
+  ggplot(aes(x = incitation, y = outcitation, color = year)) +
+  geom_point() +
+  ggtitle('Scatterplot of in vs. out') +
+  xlab('in-citation number') +
+  ylab('out-citation number')
+ggsave('figs/in vs out against years.png')
+# generally, old papers cite less and are cited more whereas
+# new papers cite more and are cited less
+
+
+### Q2
+## a
+avg.out <- total %>% 
+  group_by(year) %>% 
+  summarise(avg.out = mean(outcitation))
+
+stargazer(avg.out, summary = FALSE, type = 'text', align = TRUE)
+
+## b
+avg.out$year <- as.numeric(avg.out$year)
+
+# pretest whether hay linear relationship
+
+# correlation
+cor(avg.out$year, avg.out$avg.out, method = 'pearson')
+cor(avg.out$year, avg.out$avg.out, method = 'spearman')
+# appear to be very strong positive correlation
+
+# so fit linear model to get parameters of interest
+lin.md <- lm(avg.out ~ year, data = avg.out)
+summary(lin.md)
+
+# plot
+para <- lin.md$coefficients
+avg.out %>% 
+  ggplot(aes(x = year, y = avg.out)) +
+  geom_line() +
+  geom_abline(slope = para[2], intercept = para[1], col = 'red') +
+  ggtitle('linear model of avg.out ~ year')
+ggsave('figs/linear model of avg.out ~ year.png')
+
+stargazer(lin.md, type = 'text', title = 'linear model of avg.out ~ year',
+          align = TRUE)
+# therefore, hay strong evidence that the physicist's claim is true
+
+## c
+# for every year that has passed, the estimated average out-citation number 
+# increases by 1.596 unit
+# given that the linear assumption still holds for years before 1993, 
+# the estimated average out-citation will be -3179, which is against
+# commonse sense and not likely to be true
+
+
+### Q3
+total %>% 
+  group_by(month) %>% 
+  summarise(num.incitation = sum(incitation))
