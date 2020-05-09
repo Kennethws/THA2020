@@ -104,6 +104,38 @@ stargazer(lin.md, type = 'text', title = 'linear model of avg.out ~ year',
 
 
 ### Q3
-total %>% 
+aut.win <- total %>% 
   group_by(month) %>% 
-  summarise(num.incitation = sum(incitation))
+  summarise(num.incitation = sum(incitation), n = n()) %>% 
+  slice(1:3, 10:12)
+
+spr.sum <- total %>% 
+  group_by(month) %>% 
+  summarise(num.incitation = sum(incitation), m = n()) %>% 
+  slice(4:9)
+
+comparison <- cbind(aut.win = aut.win$num.incitation,
+                    n = aut.win[,3],
+                    spr.sum = spr.sum$num.incitation,
+                    m = spr.sum[,3])
+
+# use hypothesis testing - t-test
+# by CLT, sum of iid random samples has distribution that's 
+# approximately normal
+n <- nrow(comparison)
+m <- nrow(comparison)
+# df = n+m-2
+X <- comparison$aut.win
+Y <- comparison$spr.sum
+X.bar <- mean(X)
+Y.bar <- mean(Y)
+s.X <- sd(X)
+s.Y <- sd(Y)
+sp <- sqrt(((n-1) * s.X^2 + (m-1) * s.Y^2) / (n+m-2))
+
+t <- (X.bar - Y.bar) / sp / sqrt(1/n + 1/m)
+
+p <- pt(t, df = n+m-2, lower.tail = 0)
+# p > 0.6, no evidence to reject H0
+
+cat('After conducting t-test, p-value is', p, '\nTherefore, cannot reject H0' )
