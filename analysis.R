@@ -2,6 +2,7 @@ library(tidyverse)
 library(gridExtra)
 library(ggrepel)
 library(stargazer)
+library(ggthemes)
 
 # load data
 load('rda/papers.rda')
@@ -15,6 +16,22 @@ summary(total$incitation)
 summary(total$outcitation)
 # very little info
 
+# distribution of each variable
+# use histogram
+total %>% 
+  ggplot(aes(log(incitation + 1))) +
+  geom_histogram(binwidth = .5) +
+  ggtitle('histogram of log(in-citation+1)') + # +1 is critical, otherwise many 0's won't be shown in hist
+  theme_clean()
+ggsave('figs/histogram of log(in-citation+1).png')
+  
+total %>% 
+  ggplot(aes(log(outcitation + 1))) +
+  geom_histogram(binwidth = 0.5) +
+  ggtitle('histogram of log(out-citation+1)') +
+  theme_clean()
+ggsave('figs/histogram of log(out-citation+1).png')
+
 # plot
 p1 <- total %>% 
   ggplot(aes(x = 0, y = incitation)) +
@@ -22,7 +39,8 @@ p1 <- total %>%
   ggtitle('Boxplot of in-citation numbers') +
   theme(plot.title = element_text(size = 10)) +
   xlab('') +
-  ylab('')
+  ylab('') +
+  theme_economist()
 p1
 
 p2 <- total %>% 
@@ -31,7 +49,8 @@ p2 <- total %>%
   ggtitle('Boxplot of out-citation numbers') +
   theme(plot.title = element_text(size = 10)) +
   xlab('') +
-  ylab('')
+  ylab('') +
+  theme_economist()
 p2
 
 p <- grid.arrange(p1, p2, nrow = 1)
@@ -79,16 +98,17 @@ cor(avg.out$year, avg.out$avg.out, method = 'spearman')
 # appear to be very strong positive correlation
 
 # so fit linear model to get parameters of interest
-lin.md <- lm(avg.out ~ year, data = avg.out)
+lin.md <- lm(avg.out ~ I(year - 1993), data = avg.out)
+# extrapolating for the value at year 0 is meaningless
 summary(lin.md)
 
 # plot
 para <- lin.md$coefficients
 avg.out %>% 
-  ggplot(aes(x = year, y = avg.out)) +
+  ggplot(aes(x = year - 1993, y = avg.out)) +
   geom_line() +
   geom_abline(slope = para[2], intercept = para[1], col = 'red') +
-  ggtitle('linear model of avg.out ~ year')
+  ggtitle('linear model of avg.out ~ year - 1993')
 ggsave('figs/linear model of avg.out ~ year.png')
 
 stargazer(lin.md, type = 'text', title = 'linear model of avg.out ~ year',
